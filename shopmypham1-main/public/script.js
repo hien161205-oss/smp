@@ -1138,12 +1138,52 @@ function renderAllSections() {
     if (document.getElementById('hairCareGrid')) renderHairCareProducts();
     if (document.getElementById('makeupSectionGrid')) renderMakeupSectionProducts();
     updateHomeSectionCounts();
+    initHorizontalProductScroll();
 
     // Xử lý các trang đặc biệt
     const path = window.location.pathname;
     if (path.includes('category.html')) handleCategoryPage();
     if (path.includes('magazine.html') && !path.includes('detail')) handleMagazinePage();
     if (path.includes('magazine-detail.html')) handleMagazineDetailPage();
+}
+
+function initHorizontalProductScroll() {
+    const grids = document.querySelectorAll('.products-grid');
+
+    grids.forEach((grid) => {
+        if (grid.dataset.hScrollInit === '1') return;
+        grid.dataset.hScrollInit = '1';
+
+        grid.addEventListener('wheel', (event) => {
+            if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
+            event.preventDefault();
+            grid.scrollLeft += event.deltaY;
+        }, { passive: false });
+
+        let isPointerDown = false;
+        let startX = 0;
+        let startScrollLeft = 0;
+
+        grid.addEventListener('pointerdown', (event) => {
+            isPointerDown = true;
+            startX = event.clientX;
+            startScrollLeft = grid.scrollLeft;
+            grid.style.cursor = 'grabbing';
+            grid.style.userSelect = 'none';
+        });
+
+        window.addEventListener('pointerup', () => {
+            isPointerDown = false;
+            grid.style.cursor = '';
+            grid.style.userSelect = '';
+        });
+
+        grid.addEventListener('pointermove', (event) => {
+            if (!isPointerDown) return;
+            const moveX = event.clientX - startX;
+            grid.scrollLeft = startScrollLeft - moveX;
+        });
+    });
 }
 
 // 3.1 CATEGORY PAGE LOGIC
@@ -2511,7 +2551,7 @@ function updateUserDisplay(name) {
     if (token) {
         try {
             const payload = JSON.parse(base64DecodeUnicode(token.split('.')[1]));
-            isAdmin = payload.isAdmin === true;
+            isAdmin = payload.isAdmin === true || payload.admin === true;
         } catch (e) { isAdmin = false; }
     }
 

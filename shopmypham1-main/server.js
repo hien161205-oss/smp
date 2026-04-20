@@ -1,6 +1,93 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const admin = require('firebase-admin');
+require('dotenv').config();
+
+const firebaseReady =
+    process.env.FIREBASE_PROJECT_ID &&
+    process.env.FIREBASE_CLIENT_EMAIL &&
+    process.env.FIREBASE_PRIVATE_KEY;
+
+if (firebaseReady && !admin.apps.length) {
+    admin.initializeApp({
+        credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        })
+    });
+}
+
+const db = firebaseReady ? admin.firestore() : null;
+
+function parseBearerToken(req) {
+    const authHeader = req.headers.authorization || '';
+    if (!authHeader.startsWith('Bearer ')) return null;
+    return authHeader.slice(7).trim();
+}
+
+async function resolveAuthUser(req) {
+    const token = parseBearerToken(req);
+    if (!token) return null;
+
+    if (firebaseReady) {
+        try {
+            const decoded = await admin.auth().verifyIdToken(token);
+            return {
+                uid: decoded.uid,
+                email: decoded.email || '',
+                name: decoded.name || '',
+                isAdmin: decoded.admin === true || decoded.isAdmin === true,
+                source: 'firebase'
+            };
+        } catch (error) {
+            // fall through to mock token parser
+        }
+    }
+
+    try {
+        const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
+        return {
+            uid: payload.id || 'mock-id',
+            email: payload.email || '',
+            name: payload.name || '',
+            isAdmin: payload.isAdmin === true || payload.admin === true,
+            source: 'mock'
+        };
+    } catch (error) {
+        return null;
+    }
+}
+
+async function requireAdmin(req, res, next) {
+    const user = await resolveAuthUser(req);
+    if (!user || !user.isAdmin) {
+        return res.status(401).json({ message: 'Không có quyền Admin' });
+    }
+    req.authUser = user;
+    return next();
+}
+
+function normalizeFirestoreValue(value) {
+    if (Array.isArray(value)) return value.map(normalizeFirestoreValue);
+    if (value && typeof value === 'object') {
+        if (typeof value.toDate === 'function') {
+            return value.toDate().toISOString();
+        }
+
+        const normalized = {};
+        for (const [key, child] of Object.entries(value)) {
+            normalized[key] = normalizeFirestoreValue(child);
+        }
+        return normalized;
+    }
+    return value;
+}
+
+function mapDoc(doc) {
+    return { _id: doc.id, ...normalizeFirestoreValue(doc.data()) };
+}
 
 const app = express();
 app.use(cors());
@@ -584,39 +671,109 @@ let mockCategories = [
 ];
 
 // API Sản phẩm
-app.get(['/api/products', '/products'], (req, res) => res.json(mockProducts));
-
-app.post(['/api/products', '/products'], (req, res) => {
-    const newProd = { ...req.body, _id: "P-" + Date.now() };
-    mockProducts.push(newProd);
-    res.status(201).json(newProd);
-});
-
-app.put(['/api/products/:id', '/products/:id'], (req, res) => {
-    const index = mockProducts.findIndex(p => p._id === req.params.id);
-    if (index !== -1) {
-        mockProducts[index] = { ...mockProducts[index], ...req.body };
-        res.json(mockProducts[index]);
-    } else {
-        res.status(404).json({ message: "Không tìm thấy SP" });
+app.get(['/api/products', '/products'], async (req, res) => {
+    try {
+        if (!db) return res.json(mockProducts);
+        const snapshot = await db.collection('products').get();
+        return res.json(snapshot.docs.map(mapDoc));
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi lấy sản phẩm', error: error.message });
     }
 });
 
-app.delete(['/api/products/:id', '/products/:id'], (req, res) => {
-    mockProducts = mockProducts.filter(p => p._id !== req.params.id);
-    res.json({ message: "Đã xóa" });
+app.post(['/api/products', '/products'], requireAdmin, async (req, res) => {
+    try {
+        const newProd = { ...req.body, _id: req.body._id || "P-" + Date.now() };
+
+        if (!db) {
+            mockProducts.push(newProd);
+            return res.status(201).json(newProd);
+        }
+
+        const { _id: productId, ...productPayload } = newProd;
+        await db.collection('products').doc(productId).set(productPayload);
+        return res.status(201).json(newProd);
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi tạo sản phẩm', error: error.message });
+    }
+});
+
+app.put(['/api/products/:id', '/products/:id'], requireAdmin, async (req, res) => {
+    try {
+        if (!db) {
+            const index = mockProducts.findIndex(p => p._id === req.params.id);
+            if (index !== -1) {
+                mockProducts[index] = { ...mockProducts[index], ...req.body };
+                return res.json(mockProducts[index]);
+            }
+            return res.status(404).json({ message: "Không tìm thấy SP" });
+        }
+
+        const ref = db.collection('products').doc(req.params.id);
+        const doc = await ref.get();
+        if (!doc.exists) return res.status(404).json({ message: "Không tìm thấy SP" });
+
+        await ref.set(req.body, { merge: true });
+        const updated = await ref.get();
+        return res.json(mapDoc(updated));
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi cập nhật sản phẩm', error: error.message });
+    }
+});
+
+app.delete(['/api/products/:id', '/products/:id'], requireAdmin, async (req, res) => {
+    try {
+        if (!db) {
+            mockProducts = mockProducts.filter(p => p._id !== req.params.id);
+            return res.json({ message: "Đã xóa" });
+        }
+
+        await db.collection('products').doc(req.params.id).delete();
+        return res.json({ message: "Đã xóa" });
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi xóa sản phẩm', error: error.message });
+    }
 });
 
 // API Danh mục
-app.get(['/api/categories', '/categories'], (req, res) => res.json(mockCategories));
-app.post(['/api/categories', '/categories'], (req, res) => {
-    const newCat = { ...req.body };
-    mockCategories.push(newCat);
-    res.status(201).json(newCat);
+app.get(['/api/categories', '/categories'], async (req, res) => {
+    try {
+        if (!db) return res.json(mockCategories);
+        const snapshot = await db.collection('categories').get();
+        return res.json(snapshot.docs.map(mapDoc));
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi lấy danh mục', error: error.message });
+    }
 });
-app.delete('/api/categories/:id', (req, res) => {
-    mockCategories = mockCategories.filter(c => c.id != req.params.id);
-    res.json({ message: "Đã xóa danh mục" });
+app.post(['/api/categories', '/categories'], requireAdmin, async (req, res) => {
+    try {
+        const newCat = { ...req.body };
+
+        if (!db) {
+            mockCategories.push(newCat);
+            return res.status(201).json(newCat);
+        }
+
+        const docId = String(newCat.id || newCat.slug || Date.now());
+        await db.collection('categories').doc(docId).set(newCat, { merge: true });
+        const saved = await db.collection('categories').doc(docId).get();
+        return res.status(201).json(mapDoc(saved));
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi tạo danh mục', error: error.message });
+    }
+});
+app.delete('/api/categories/:id', requireAdmin, async (req, res) => {
+    try {
+        if (!db) {
+            mockCategories = mockCategories.filter(c => c.id != req.params.id);
+            return res.json({ message: "Đã xóa danh mục" });
+        }
+
+        await db.collection('categories').doc(req.params.id).delete();
+        return res.json({ message: "Đã xóa danh mục" });
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi xóa danh mục', error: error.message });
+    }
 });
 
 // Mock Data cho Bài viết & Người dùng
@@ -631,84 +788,179 @@ let mockConfig = {
 };
 
 // Route đăng nhập (Mô phỏng)
-app.post('/api/users/login', (req, res) => {
+app.post('/api/users/login', async (req, res) => {
     const { email, password } = req.body;
-    
-    // Giả lập: admin@qh.com / 123456 là Admin
+
+    if (firebaseReady && process.env.FIREBASE_WEB_API_KEY) {
+        try {
+            const response = await fetch(
+                `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_WEB_API_KEY}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, returnSecureToken: true })
+                }
+            );
+            const data = await response.json();
+
+            if (!response.ok) {
+                return res.status(401).json({ message: data.error?.message || 'Đăng nhập thất bại' });
+            }
+
+            const user = await admin.auth().getUser(data.localId);
+            const claims = user.customClaims || {};
+            const isAdmin = claims.admin === true || claims.isAdmin === true;
+            const name = user.displayName || (email ? email.split('@')[0] : 'Người dùng');
+
+            return res.json({ token: data.idToken, name, email, isAdmin });
+        } catch (error) {
+            return res.status(500).json({ message: 'Lỗi đăng nhập Firebase', error: error.message });
+        }
+    }
+
+    // Fallback mock nếu chưa cấu hình Firebase Auth Web API key
     const isAdmin = email === 'admin@qh.com' && password === '123456';
     const name = isAdmin ? 'Admin Hệ Thống' : (email ? email.split('@')[0] : 'Người dùng');
-
-    // Tạo token giả (Base64) để Frontend có thể giải mã kiểm tra quyền
-    const payload = Buffer.from(JSON.stringify({ id: "mock-id", name, isAdmin })).toString('base64');
+    const payload = Buffer.from(JSON.stringify({ id: "mock-id", name, email, isAdmin })).toString('base64');
     const token = `mockHeader.${payload}.mockSignature`;
-
-    res.json({ token, name, email: email || 'user@example.com', isAdmin });
+    return res.json({ token, name, email: email || 'user@example.com', isAdmin });
 });
 
 // Route đăng ký (Mô phỏng)
-app.post('/api/users', (req, res) => {
-    const { name, email } = req.body;
-    const payload = Buffer.from(JSON.stringify({ id: "mock-id", name, isAdmin: false })).toString('base64');
-    const token = `mockHeader.${payload}.mockSignature`;
+app.post('/api/users', async (req, res) => {
+    const { name, email, password } = req.body;
 
-    res.status(201).json({ token, name, email, isAdmin: false });
+    if (firebaseReady && process.env.FIREBASE_WEB_API_KEY) {
+        try {
+            const response = await fetch(
+                `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.FIREBASE_WEB_API_KEY}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, returnSecureToken: true })
+                }
+            );
+            const data = await response.json();
+
+            if (!response.ok) {
+                return res.status(400).json({ message: data.error?.message || 'Đăng ký thất bại' });
+            }
+
+            if (name) {
+                await admin.auth().updateUser(data.localId, { displayName: name });
+            }
+
+            return res.status(201).json({ token: data.idToken, name: name || email.split('@')[0], email, isAdmin: false });
+        } catch (error) {
+            return res.status(500).json({ message: 'Lỗi đăng ký Firebase', error: error.message });
+        }
+    }
+
+    const payload = Buffer.from(JSON.stringify({ id: "mock-id", name, email, isAdmin: false })).toString('base64');
+    const token = `mockHeader.${payload}.mockSignature`;
+    return res.status(201).json({ token, name, email, isAdmin: false });
 });
 
 // Quản lý Người dùng (Chỉ xem)
-app.get('/api/users', (req, res) => res.json(mockUsers));
+app.get('/api/users', requireAdmin, (req, res) => res.json(mockUsers));
 
 // Quản lý Bài viết (Magazine)
 app.get(['/api/magazine', '/magazine'], (req, res) => res.json(mockMagazine));
-app.post('/api/magazine', (req, res) => {
+app.post('/api/magazine', requireAdmin, (req, res) => {
     const post = { ...req.body, _id: "MAG-" + Date.now(), createdAt: new Date() };
     mockMagazine.push(post);
     res.status(201).json(post);
 });
-app.delete('/api/magazine/:id', (req, res) => {
+app.delete('/api/magazine/:id', requireAdmin, (req, res) => {
     mockMagazine = mockMagazine.filter(m => m._id !== req.params.id);
     res.json({ message: "Đã xóa bài viết" });
 });
 
 // Quản lý Cấu hình
 app.get('/api/config', (req, res) => res.json(mockConfig));
-app.post('/api/config', (req, res) => {
+app.post('/api/config', requireAdmin, (req, res) => {
     mockConfig = { ...mockConfig, ...req.body };
     res.json(mockConfig);
 });
 
 // Route kiểm tra quyền Admin (Dùng cho admin.html)
-app.get('/api/users/admin-check', (req, res) => {
-    const authHeader = req.headers.authorization;
-    if (authHeader && authHeader.includes('.')) {
-        try {
-            const token = authHeader.split(' ')[1];
-            const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString('utf8'));
-            if (payload.isAdmin) return res.json({ isAdmin: true });
-        } catch (e) {}
-    }
-    res.status(401).json({ message: "Không có quyền Admin" });
+app.get('/api/users/admin-check', async (req, res) => {
+    const user = await resolveAuthUser(req);
+    if (user && user.isAdmin) return res.json({ isAdmin: true });
+    return res.status(401).json({ message: "Không có quyền Admin" });
 });
 
 // Lấy danh sách đơn hàng (Cho Admin)
-app.get(['/api/orders', '/orders'], (req, res) => res.json(mockOrders));
+app.get(['/api/orders', '/orders'], requireAdmin, async (req, res) => {
+    try {
+        if (!db) return res.json(mockOrders);
+        const snapshot = await db.collection('orders').orderBy('createdAt', 'desc').get();
+        return res.json(snapshot.docs.map(mapDoc));
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi lấy đơn hàng', error: error.message });
+    }
+});
 
 // Route đặt hàng
-app.post(['/api/orders', '/orders'], (req, res) => {
-    const { customerInfo, items, paymentMethod, totalPrice: clientTotal } = req.body;
-    
-    const newOrder = {
-        _id: "ORDER-" + Date.now() + Math.floor(Math.random() * 1000),
-        customerInfo,
-        items,
-        paymentMethod,
-        totalPrice: clientTotal || items.reduce((sum, i) => sum + (i.price || 0) * i.quantity, 0),
-        status: "Chờ xác nhận",
-        isPaid: false,
-        createdAt: new Date()
-    };
+app.post(['/api/orders', '/orders'], async (req, res) => {
+    try {
+        const { customerInfo, items = [], paymentMethod, totalPrice: clientTotal } = req.body;
 
-    mockOrders.push(newOrder);
-    res.status(201).json(newOrder);
+        const newOrder = {
+            _id: "ORDER-" + Date.now() + Math.floor(Math.random() * 1000),
+            customerInfo,
+            items,
+            paymentMethod,
+            totalPrice: clientTotal || items.reduce((sum, i) => sum + (i.price || 0) * i.quantity, 0),
+            status: "Chờ xác nhận",
+            isPaid: false,
+            createdAt: new Date().toISOString()
+        };
+
+        if (!db) {
+            mockOrders.push(newOrder);
+            return res.status(201).json(newOrder);
+        }
+
+        const { _id: orderId, ...orderPayload } = newOrder;
+        await db.collection('orders').doc(orderId).set(orderPayload);
+        return res.status(201).json(newOrder);
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi tạo đơn hàng', error: error.message });
+    }
+});
+
+app.post('/api/admin/seed-firestore', requireAdmin, async (req, res) => {
+    try {
+        if (!db) {
+            return res.status(400).json({
+                message: 'Firebase chưa cấu hình. Hãy thêm FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY.'
+            });
+        }
+
+        const productsSnapshot = await db.collection('products').limit(1).get();
+        if (!productsSnapshot.empty) {
+            return res.json({ message: 'Firestore đã có dữ liệu, bỏ qua seed.' });
+        }
+
+        const batch = db.batch();
+
+        mockProducts.forEach((product) => {
+            const ref = db.collection('products').doc(product._id || `P-${Date.now()}`);
+            const { _id, ...payload } = product;
+            batch.set(ref, payload);
+        });
+
+        mockCategories.forEach((category) => {
+            const ref = db.collection('categories').doc(String(category.id || category.slug));
+            batch.set(ref, category);
+        });
+
+        await batch.commit();
+        return res.json({ message: `Seed thành công ${mockProducts.length} products và ${mockCategories.length} categories.` });
+    } catch (error) {
+        return res.status(500).json({ message: 'Seed Firestore thất bại', error: error.message });
+    }
 });
 
 // 3. ĐỊNH TUYẾN TRANG (Explicit Routing để tránh 404)
