@@ -1005,16 +1005,16 @@ body {
 }
 
 #merzyProductsGrid {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    overflow: visible;
 }
 
 #merzyProductsGrid .product-card {
-    flex: 0 0 230px;
-    width: auto;
-    min-width: 230px;
+    flex: unset;
+    width: 100%;
+    min-width: unset;
 }
 
 /* SEARCH TRENDS */

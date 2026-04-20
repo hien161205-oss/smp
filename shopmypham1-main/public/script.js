@@ -1148,7 +1148,7 @@ function renderAllSections() {
 }
 
 function initHorizontalProductScroll() {
-    const grids = document.querySelectorAll('.products-grid');
+    const grids = document.querySelectorAll('.products-grid:not(#merzyProductsGrid)');
 
     grids.forEach((grid) => {
         if (grid.dataset.hScrollInit === '1') return;
@@ -1163,6 +1163,24 @@ function initHorizontalProductScroll() {
         let isPointerDown = false;
         let startX = 0;
         let startScrollLeft = 0;
+        let hoverSpeed = 0;
+        let rafId = null;
+
+        const tickAutoScroll = () => {
+            if (hoverSpeed !== 0) {
+                grid.scrollLeft += hoverSpeed;
+                rafId = requestAnimationFrame(tickAutoScroll);
+            } else {
+                rafId = null;
+            }
+        };
+
+        const setHoverSpeed = (nextSpeed) => {
+            hoverSpeed = nextSpeed;
+            if (hoverSpeed !== 0 && !rafId) {
+                rafId = requestAnimationFrame(tickAutoScroll);
+            }
+        };
 
         grid.addEventListener('pointerdown', (event) => {
             isPointerDown = true;
@@ -1179,9 +1197,30 @@ function initHorizontalProductScroll() {
         });
 
         grid.addEventListener('pointermove', (event) => {
-            if (!isPointerDown) return;
-            const moveX = event.clientX - startX;
-            grid.scrollLeft = startScrollLeft - moveX;
+            if (isPointerDown) {
+                const moveX = event.clientX - startX;
+                grid.scrollLeft = startScrollLeft - moveX;
+                return;
+            }
+
+            const rect = grid.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const edge = 90;
+            const maxSpeed = 12;
+
+            if (x > rect.width - edge) {
+                const intensity = (x - (rect.width - edge)) / edge;
+                setHoverSpeed(Math.max(2, Math.round(intensity * maxSpeed)));
+            } else if (x < edge) {
+                const intensity = (edge - x) / edge;
+                setHoverSpeed(-Math.max(2, Math.round(intensity * maxSpeed)));
+            } else {
+                setHoverSpeed(0);
+            }
+        });
+
+        grid.addEventListener('pointerleave', () => {
+            setHoverSpeed(0);
         });
     });
 }
