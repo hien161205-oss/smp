@@ -710,7 +710,35 @@ let mockOrders = [
         createdAt: new Date().toISOString()
     }
 ];
-let mockMagazine = [];
+let mockMagazine = [
+    {
+        _id: "MAG-1",
+        title: "Bí quyết trang điểm tự nhiên như không cho nàng công sở",
+        category: "makeup-tips",
+        thumbnail: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80",
+        description: "Làm thế nào để có một lớp nền mỏng nhẹ, tự nhiên nhưng vẫn che được khuyết điểm?",
+        content: "Nội dung chi tiết về bí quyết trang điểm tự nhiên...",
+        createdAt: "2026-04-10T10:00:00.000Z"
+    },
+    {
+        _id: "MAG-2",
+        title: "Quy trình chăm sóc da chuyên sâu cho da dầu mụn",
+        category: "skincare-tips",
+        thumbnail: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80",
+        description: "Da dầu mụn cần một chế độ chăm sóc đặc biệt để kiểm soát dầu thừa.",
+        content: "Nội dung chi tiết về chăm sóc da dầu mụn...",
+        createdAt: "2026-04-12T14:30:00.000Z"
+    },
+    {
+        _id: "MAG-3",
+        title: "Review chi tiết kem chống nắng La Roche-Posay Anthelios",
+        category: "review",
+        thumbnail: "https://product.hstatic.net/1000006063/product/bth_b1850e1e326b4a60ab803afca16b55af_1024x1024.jpg",
+        description: "Đánh giá chân thực về khả năng bảo vệ da và cảm giác trên da.",
+        content: "Nội dung đánh giá sản phẩm...",
+        createdAt: "2026-04-18T08:15:00.000Z"
+    }
+];
 let mockUsers = [
     { _id: "u1", name: "Nguyễn Thị Lan", email: "lan.nguyen@gmail.com", role: "Khách hàng", createdAt: "2026-01-10T10:00:00.000Z" },
     { _id: "u2", name: "Admin Hệ Thống", email: "admin@qh.com", role: "Quản trị viên", createdAt: "2026-01-01T00:00:00.000Z" },
@@ -911,6 +939,14 @@ app.post('/api/magazine', requireAdmin, (req, res) => {
     const post = { ...req.body, _id: "MAG-" + Date.now(), createdAt: new Date() };
     mockMagazine.push(post);
     res.status(201).json(post);
+});
+app.put('/api/magazine/:id', requireAdmin, (req, res) => {
+    const index = mockMagazine.findIndex(m => m._id === req.params.id);
+    if (index !== -1) {
+        mockMagazine[index] = { ...mockMagazine[index], ...req.body };
+        return res.json(mockMagazine[index]);
+    }
+    res.status(404).json({ message: "Không tìm thấy bài viết" });
 });
 app.delete('/api/magazine/:id', requireAdmin, (req, res) => {
     mockMagazine = mockMagazine.filter(m => m._id !== req.params.id);
