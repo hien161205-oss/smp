@@ -1533,7 +1533,7 @@ window.updateBrandSection = function(brandName, element) {
     const bannerImg = document.getElementById('brandBannerImg');
     if (bannerImg) {
         const brandBanners = {
-            'drceutics': 'blob:https://chat.zalo.me/12b631f5-f36a-4042-9585-d1ef64410678'
+            'drceutics': 'https://tse1.mm.bing.net/th/id/OIP.OfyLfasSBQ7Dja8o83btaQHaNK?rs=1&pid=ImgDetMain&o=7&rm=3'
             // Bạn có thể thêm các link ảnh tĩnh khác cho Merzy, Anessa... vào đây nếu muốn
         };
 
