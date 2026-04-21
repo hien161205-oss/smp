@@ -718,7 +718,7 @@ let mockMagazine = [
         thumbnail: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80",
         description: "Làm thế nào để có một lớp nền mỏng nhẹ, tự nhiên nhưng vẫn che được khuyết điểm?",
         content: "Nội dung chi tiết về bí quyết trang điểm tự nhiên...",
-        createdAt: "2026-04-01T00:00:00.000Z"
+        createdAt: "2026-04-10T10:00:00.000Z"
     },
     {
         _id: "MAG-2",
@@ -727,7 +727,7 @@ let mockMagazine = [
         thumbnail: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80",
         description: "Da dầu mụn cần một chế độ chăm sóc đặc biệt để kiểm soát dầu thừa.",
         content: "Nội dung chi tiết về chăm sóc da dầu mụn...",
-        createdAt: "2026-04-01T00:00:00.000Z"
+        createdAt: "2026-04-12T14:30:00.000Z"
     },
     {
         _id: "MAG-3",
@@ -736,7 +736,7 @@ let mockMagazine = [
         thumbnail: "https://product.hstatic.net/1000006063/product/bth_b1850e1e326b4a60ab803afca16b55af_1024x1024.jpg",
         description: "Đánh giá chân thực về khả năng bảo vệ da và cảm giác trên da.",
         content: "Nội dung đánh giá sản phẩm...",
-        createdAt: "2026-04-01T00:00:00.000Z"
+        createdAt: "2026-04-18T08:15:00.000Z"
     }
 ];
 let mockUsers = [
