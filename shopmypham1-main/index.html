@@ -329,11 +329,11 @@
     <!-- CHECKOUT OVERLAY -->
     <div class="admin-overlay" id="checkoutOverlay" style="z-index: 11000; background: #f4f4f4;">
         <div style="background: white; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100;">
-            <h1 style="font-size: 24px; font-weight: 900; letter-spacing: -1px; margin: 0; cursor: pointer;" onclick="document.getElementById('checkoutOverlay').classList.remove('active')">Q&H SKINLAB</h1>
+            <h1 style="font-size: 24px; font-weight: 900; letter-spacing: -1px; margin: 0; cursor: pointer;" onclick="const o = document.getElementById('checkoutOverlay'); o.classList.remove('active'); o.style.display='none';">Q&H SKINLAB</h1>
             <div style="display: flex; align-items: center; gap: 10px; color: #666; font-size: 14px; font-weight: 600;">
                 <span>Thanh toán an toàn</span>
                 <div style="width: 1px; height: 20px; background: #ddd;"></div>
-                <button id="closeCheckoutBtn" style="background: none; border: none; cursor: pointer; font-size: 20px; color: #333;">&times;</button>
+                <button id="closeCheckoutBtn" style="background: none; border: none; cursor: pointer; font-size: 20px; color: #333;" onclick="const o = document.getElementById('checkoutOverlay'); o.classList.remove('active'); o.style.display='none';">&times;</button>
             </div>
         </div>
 

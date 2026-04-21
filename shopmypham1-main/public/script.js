@@ -2180,9 +2180,10 @@ function initEvents() {
         const checkoutOverlay = document.getElementById('checkoutOverlay');
 
         if (closeCheckoutBtn && checkoutOverlay) {
-            closeCheckoutBtn.addEventListener('click', () => {
+            closeCheckoutBtn.onclick = () => {
                 checkoutOverlay.classList.remove('active');
-            });
+                checkoutOverlay.style.display = 'none';
+            };
         }
 
         if (checkoutForm) {
@@ -2763,8 +2764,8 @@ function injectRequiredElements() {
         const checkoutHtml = `
             <div class="admin-overlay" id="checkoutOverlay" style="z-index: 11000; background: #f4f4f4; display:none;">
                 <div style="background: white; padding: 15px 5%; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; position: sticky; top: 0; z-index: 100;">
-                    <h1 style="font-size: 24px; font-weight: 900; letter-spacing: -1px; margin: 0; cursor: pointer;" onclick="document.getElementById('checkoutOverlay').classList.remove('active')">Q&H SKINLAB</h1>
-                    <button id="closeCheckoutBtn" style="background: none; border: none; cursor: pointer; font-size: 24px;">&times;</button>
+                    <h1 style="font-size: 24px; font-weight: 900; letter-spacing: -1px; margin: 0; cursor: pointer;" onclick="const o = document.getElementById('checkoutOverlay'); o.classList.remove('active'); o.style.display='none';">Q&H SKINLAB</h1>
+                    <button id="closeCheckoutBtn" style="background: none; border: none; cursor: pointer; font-size: 24px;" onclick="const o = document.getElementById('checkoutOverlay'); o.classList.remove('active'); o.style.display='none';">&times;</button>
                 </div>
                 <div class="container" style="max-width: 1100px; margin: 40px auto; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 30px;">
                     <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
