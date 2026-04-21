@@ -1533,7 +1533,8 @@ window.updateBrandSection = function(brandName, element) {
     const bannerImg = document.getElementById('brandBannerImg');
     if (bannerImg) {
         const brandBanners = {
-            'drceutics': 'https://tse1.mm.bing.net/th/id/OIP.OfyLfasSBQ7Dja8o83btaQHaNK?rs=1&pid=ImgDetMain&o=7&rm=3'
+            'drceutics': 'https://tse1.mm.bing.net/th/id/OIP.OfyLfasSBQ7Dja8o83btaQHaNK?rs=1&pid=ImgDetMain&o=7&rm=3',
+            'cocoon': 'https://tse4.mm.bing.net/th/id/OIP.8B10ose2UUbg3j5VgbYcKQHaIU?rs=1&pid=ImgDetMain&o=7&rm=3'
             // Bạn có thể thêm các link ảnh tĩnh khác cho Merzy, Anessa... vào đây nếu muốn
         };
 
