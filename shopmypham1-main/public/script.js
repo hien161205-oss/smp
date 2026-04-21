@@ -1529,10 +1529,17 @@ function renderMerzyProducts() {
 }
 
 window.updateBrandSection = function(brandName, element) {
-    // 1. Cập nhật banner bên cạnh cho đúng thương hiệu (dùng picsum seed để tạo ảnh khác biệt)
+    // 1. Cập nhật banner bên cạnh cho đúng thương hiệu
     const bannerImg = document.getElementById('brandBannerImg');
     if (bannerImg) {
-        bannerImg.src = `https://picsum.photos/seed/${brandName.toLowerCase()}/400/800`;
+        const brandBanners = {
+            'drceutics': 'blob:https://chat.zalo.me/12b631f5-f36a-4042-9585-d1ef64410678'
+            // Bạn có thể thêm các link ảnh tĩnh khác cho Merzy, Anessa... vào đây nếu muốn
+        };
+
+        const bannerUrl = brandBanners[brandName.toLowerCase()] || `https://picsum.photos/seed/${brandName.toLowerCase()}/400/800`;
+        
+        bannerImg.src = bannerUrl;
         bannerImg.alt = `${brandName} Banner`;
     }
 
