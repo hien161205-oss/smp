@@ -670,11 +670,53 @@ let mockCategories = [
     { id: 4, name: 'Tóc & Da đầu', slug: 'haircare' }
 ];
 
-let mockOrders = [];
+let mockOrders = [
+    {
+        _id: "ORDER-1712456789",
+        customerInfo: { name: "Nguyễn Thị Lan", phone: "0905123456", email: "lan.nguyen@gmail.com", address: "123 Quận 1, TP.HCM", note: "Giao giờ hành chính" },
+        items: [
+            { product: "p1", name: "[NEW DEW] Son Tint Bóng Merzy Dạng Thạch", quantity: 2, price: 179000 },
+            { product: "p3", name: "Kem Chống Nắng La Roche-Posay Anthelios", quantity: 1, price: 449000 }
+        ],
+        paymentMethod: "COD",
+        totalPrice: 807000,
+        status: "Đã giao",
+        isPaid: true,
+        createdAt: "2026-04-15T08:30:00.000Z"
+    },
+    {
+        _id: "ORDER-1712567890",
+        customerInfo: { name: "Trần Văn Bình", phone: "0914987654", email: "binh.tran@yahoo.com", address: "456 Cầu Giấy, Hà Nội", note: "" },
+        items: [
+            { product: "p10", name: "Gel Chống Nắng Anessa Perfect UV Skincare", quantity: 1, price: 488000 }
+        ],
+        paymentMethod: "BANK",
+        totalPrice: 488000,
+        status: "Chờ xác nhận",
+        isPaid: false,
+        createdAt: new Date().toISOString()
+    },
+    {
+        _id: "ORDER-1712678901",
+        customerInfo: { name: "Lê Minh Tâm", phone: "0988222333", email: "tamle@gmail.com", address: "78 Đà Nẵng", note: "Gói quà giúp mình" },
+        items: [
+            { product: "p17", name: "Sữa Dưỡng Thể DrCeutics Niacinamide 10%", quantity: 1, price: 216000 },
+            { product: "p20", name: "Son Tint Bóng B.O.M Lip Flash Tint", quantity: 1, price: 159000 }
+        ],
+        paymentMethod: "COD",
+        totalPrice: 375000,
+        status: "Đang giao",
+        isPaid: false,
+        createdAt: new Date().toISOString()
+    }
+];
 let mockMagazine = [];
 let mockUsers = [
-    { _id: "u1", name: "Nguyễn Văn A", email: "customer@example.com", role: "Khách hàng", createdAt: new Date().toISOString() },
-    { _id: "u2", name: "Admin", email: "admin@qh.com", role: "Quản trị viên", createdAt: new Date().toISOString() }
+    { _id: "u1", name: "Nguyễn Thị Lan", email: "lan.nguyen@gmail.com", role: "Khách hàng", createdAt: "2026-01-10T10:00:00.000Z" },
+    { _id: "u2", name: "Admin Hệ Thống", email: "admin@qh.com", role: "Quản trị viên", createdAt: "2026-01-01T00:00:00.000Z" },
+    { _id: "u3", name: "Trần Văn Bình", email: "binh.tran@yahoo.com", role: "Khách hàng", createdAt: "2026-02-15T14:20:00.000Z" },
+    { _id: "u4", name: "Lê Minh Tâm", email: "tamle@gmail.com", role: "Khách hàng", createdAt: "2026-03-20T09:45:00.000Z" },
+    { _id: "u5", name: "Phạm Hải Đăng", email: "dangpham@outlook.com", role: "Khách hàng", createdAt: "2026-04-01T11:10:00.000Z" }
 ];
 let mockConfig = {
     hotline: "1900 636 510", email: "contact@qhskinlab.com", banners: []
