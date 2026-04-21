@@ -653,6 +653,113 @@
                 </div>
             </div>
         </div>
+
+        <!-- Users Section -->
+        <div id="users" class="content-section">
+            <div class="page-header">
+                <div class="page-title">
+                    <h2>Quản lý người dùng</h2>
+                    <p>Danh sách tài khoản khách hàng và quản trị viên.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Họ tên</th>
+                                <th>Email</th>
+                                <th>Vai trò</th>
+                                <th>Ngày tạo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersBody">
+                            <!-- JS Render -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Magazine Section -->
+        <div id="magazine" class="content-section">
+            <div class="page-header">
+                <div class="page-title">
+                    <h2>Tạp chí & Bài viết</h2>
+                    <p>Quản lý các bài viết tin tức và bí quyết làm đẹp.</p>
+                </div>
+                <button class="btn btn-primary" onclick="openMagazineModal()">
+                    Thêm bài viết mới
+                </button>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Bài viết</th>
+                                <th>Chuyên mục</th>
+                                <th>Ngày đăng</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="magazineBody">
+                            <!-- JS Render -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Section -->
+        <div id="config" class="content-section">
+            <div class="page-header">
+                <div class="page-title">
+                    <h2>Cấu hình Website</h2>
+                    <p>Cập nhật thông tin liên hệ và giao diện hệ thống.</p>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <div class="card" style="padding: 24px;">
+                    <h3 style="margin-bottom: 20px;">Thông tin liên hệ</h3>
+                    <div class="form-group">
+                        <label>Hotline hỗ trợ</label>
+                        <input type="text" id="cfgHotline" placeholder="1900 xxxx">
+                    </div>
+                    <div class="form-group">
+                        <label>Email liên hệ</label>
+                        <input type="email" id="cfgEmail" placeholder="admin@example.com">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveWebConfig()">Lưu thông tin</button>
+                </div>
+                
+                <div class="card" style="padding: 24px;">
+                    <h3 style="margin-bottom: 20px;">Tài khoản Admin</h3>
+                    <div class="form-group">
+                        <label>Tên hiển thị Admin</label>
+                        <input type="text" id="adminName" value="Admin Hệ Thống">
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu mới (bỏ trống nếu không đổi)</label>
+                        <input type="password" id="setAdminPass">
+                    </div>
+                    <div class="form-group">
+                        <label>Xác nhận mật khẩu</label>
+                        <input type="password" id="confirmAdminPass">
+                    </div>
+                    <button class="btn btn-outline" id="saveAdminAccount">Cập nhật hồ sơ</button>
+                </div>
+
+                <div class="card" style="padding: 24px; grid-column: span 2;">
+                    <h3 style="margin-bottom: 20px;">Giao diện (Theme)</h3>
+                    <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 15px;">Chọn màu chủ đạo cho toàn bộ hệ thống website.</p>
+                    <div style="display: flex; gap: 15px;" id="themeSelector">
+                        <!-- Theme buttons will be here -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- MODAL: PRODUCT -->
@@ -849,6 +956,10 @@
                 products = prodData;
                 orders = orderData;
                 categories = catData.length > 0 ? catData : DEFAULT_CATEGORIES;
+
+                // Tải thêm users và magazine
+                users = await safeFetch(`${API_BASE_URL}/users`, { headers: authHeader });
+                magazine = await safeFetch(`${API_BASE_URL}/magazine`);
                 
                 renderDashboard();
                 renderProducts();
@@ -871,6 +982,11 @@
             if (tabId === 'products') renderProducts();
             if (tabId === 'orders') renderOrders();
             if (tabId === 'categories') renderCategories();
+            if (tabId === 'users') renderUsers();
+            if (tabId === 'magazine') renderMagazine();
+            if (tabId === 'config') {
+                loadConfig();
+            }
         }
 
         function showToast(message) {
@@ -1005,6 +1121,105 @@
             const catSelect = document.getElementById('prodCategory');
             catSelect.innerHTML = categories.map(c => `<option value="${c.slug}">${c.name}</option>`).join('');
         }
+
+        function renderUsers() {
+            const body = document.getElementById('usersBody');
+            body.innerHTML = users.map(u => `
+                <tr>
+                    <td class="mono">${u._id}</td>
+                    <td style="font-weight: 600;">${u.name}</td>
+                    <td>${u.email}</td>
+                    <td><span class="badge ${u.role === 'Quản trị viên' ? 'badge-danger' : 'badge-primary'}">${u.role}</span></td>
+                    <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderMagazine() {
+            const body = document.getElementById('magazineBody');
+            if (magazine.length === 0) {
+                body.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px; color: var(--text-muted);">Chưa có bài viết nào.</td></tr>';
+                return;
+            }
+            body.innerHTML = magazine.map(m => `
+                <tr>
+                    <td>
+                        <div class="prod-cell">
+                            <img src="${m.thumbnail}" class="prod-img">
+                            <div style="font-weight: 700;">${m.title}</div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-primary">${m.category}</span></td>
+                    <td>${new Date(m.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger-sm" onclick="deleteMagazinePost('${m._id}')">Xóa</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- 5. MAGAZINE LOGIC ---
+        function openMagazineModal() {
+            document.getElementById('magazineModalOverlay').style.display = 'flex';
+        }
+        function closeMagazineModal() {
+            document.getElementById('magazineModalOverlay').style.display = 'none';
+        }
+        window.saveMagazinePost = async function() {
+            const postData = {
+                title: document.getElementById('magTitle').value,
+                category: document.getElementById('magCat').value,
+                thumbnail: document.getElementById('magThumb').value,
+                description: document.getElementById('magDesc').value,
+                content: document.getElementById('magContent').value
+            };
+            try {
+                await safeFetch(`${API_BASE_URL}/magazine`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...authHeader },
+                    body: JSON.stringify(postData)
+                });
+                showToast('Đã đăng bài viết mới');
+                loadAdminData();
+                closeMagazineModal();
+            } catch (err) { showToast(err.message); }
+        };
+        window.deleteMagazinePost = async function(id) {
+            if (confirm('Xóa bài viết này?')) {
+                try {
+                    await safeFetch(`${API_BASE_URL}/magazine/${id}`, { method: 'DELETE', headers: authHeader });
+                    showToast('Đã xóa bài viết');
+                    loadAdminData();
+                } catch (err) { showToast(err.message); }
+            }
+        };
+
+        // --- 6. CONFIG LOGIC ---
+        async function loadConfig() {
+            try {
+                const cfg = await safeFetch(`${API_BASE_URL}/config`);
+                document.getElementById('cfgHotline').value = cfg.hotline;
+                document.getElementById('cfgEmail').value = cfg.email;
+                document.getElementById('adminName').value = localStorage.getItem('qh_userName') || 'Admin';
+            } catch (err) { console.error(err); }
+        }
+
+        window.saveWebConfig = async function() {
+            const cfgData = {
+                hotline: document.getElementById('cfgHotline').value,
+                email: document.getElementById('cfgEmail').value
+            };
+            try {
+                await safeFetch(`${API_BASE_URL}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', ...authHeader },
+                    body: JSON.stringify(cfgData)
+                });
+                localStorage.setItem('qh_hotline', cfgData.hotline);
+                localStorage.setItem('qh_email', cfgData.email);
+                showToast('Đã cập nhật cấu hình hệ thống');
+            } catch (err) { showToast(err.message); }
+        };
 
         function getStatusBadge(status) {
             switch(status) {

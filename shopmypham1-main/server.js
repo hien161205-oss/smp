@@ -670,6 +670,16 @@ let mockCategories = [
     { id: 4, name: 'Tóc & Da đầu', slug: 'haircare' }
 ];
 
+let mockOrders = [];
+let mockMagazine = [];
+let mockUsers = [
+    { _id: "u1", name: "Nguyễn Văn A", email: "customer@example.com", role: "Khách hàng", createdAt: new Date().toISOString() },
+    { _id: "u2", name: "Admin", email: "admin@qh.com", role: "Quản trị viên", createdAt: new Date().toISOString() }
+];
+let mockConfig = {
+    hotline: "1900 636 510", email: "contact@qhskinlab.com", banners: []
+};
+
 // API Sản phẩm
 app.get(['/api/products', '/products'], async (req, res) => {
     try {
@@ -775,17 +785,6 @@ app.delete('/api/categories/:id', requireAdmin, async (req, res) => {
         return res.status(500).json({ message: 'Lỗi xóa danh mục', error: error.message });
     }
 });
-
-// Mock Data cho Bài viết & Người dùng
-let mockOrders = [];
-let mockMagazine = [];
-let mockUsers = [
-    { _id: "u1", name: "Nguyễn Văn A", email: "customer@example.com", role: "Khách hàng", createdAt: new Date() },
-    { _id: "u2", name: "Admin", email: "admin@qh.com", role: "Quản trị viên", createdAt: new Date() }
-];
-let mockConfig = {
-    hotline: "1900 636 510", email: "contact@qhskinlab.com", banners: []
-};
 
 // Route đăng nhập (Mô phỏng)
 app.post('/api/users/login', async (req, res) => {
