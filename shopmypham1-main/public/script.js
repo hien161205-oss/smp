@@ -1534,8 +1534,11 @@ window.updateBrandSection = function(brandName, element) {
     if (bannerImg) {
         const brandBanners = {
             'drceutics': 'https://tse1.mm.bing.net/th/id/OIP.OfyLfasSBQ7Dja8o83btaQHaNK?rs=1&pid=ImgDetMain&o=7&rm=3',
-            'cocoon': 'https://tse4.mm.bing.net/th/id/OIP.8B10ose2UUbg3j5VgbYcKQHaIU?rs=1&pid=ImgDetMain&o=7&rm=3'
-            // Bạn có thể thêm các link ảnh tĩnh khác cho Merzy, Anessa... vào đây nếu muốn
+            'cocoon': 'https://the7.vn/wp-content/uploads/2024/08/Cac-san-pham-cua-Cocoon-hoan-toan-duoc-che-tao-tu-nguyen-lieu-thien-nhien-thuan-chay-tinh-khiet-va-an-toan-768x862.png',
+            'anessa': 'https://tse2.mm.bing.net/th/id/OIP.ycvbSJjumqoI8uMfUS-dawHaHa?rs=1&pid=ImgDetMain&o=7&rm=3',
+            'la roche-posay': 'https://tse4.mm.bing.net/th/id/OIP.KOH318hculZu7fs-k0hRFAHaLH?rs=1&pid=ImgDetMain&o=7&rm=3',
+            'b.o.m': 'https://media.hcdn.vn/catalog/product/s/o/son-li-b-o-m-808-do-dat-ban-gioi-han-2024-3-1g-1-1727926367_img_800x800_eb97c5_fit_center.jpg',
+            'merzy': 'https://tse1.mm.bing.net/th/id/OIP.hycdX6kFaqb6aOy8PQKhIgHaHa?rs=1&pid=ImgDetMain&o=7&rm=3'
         };
 
         const bannerUrl = brandBanners[brandName.toLowerCase()] || `https://picsum.photos/seed/${brandName.toLowerCase()}/400/800`;
