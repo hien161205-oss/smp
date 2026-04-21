@@ -1063,7 +1063,7 @@ const magazinePosts = [
         title: "Bí quyết trang điểm tự nhiên như không cho nàng công sở",
         category: "makeup-tips",
         categoryName: "Bí quyết trang điểm",
-        date: "06/04/2026",
+        date: "01/04/2026",
         description: "Làm thế nào để có một lớp nền mỏng nhẹ, tự nhiên nhưng vẫn che được khuyết điểm? Hãy cùng khám phá các bước trang điểm đơn giản nhất.",
         thumbnail: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80",
         content: "Nội dung chi tiết về bí quyết trang điểm tự nhiên... <br><br> Bước 1: Làm sạch da... <br> Bước 2: Kem lót... <br> Bước 3: Phấn nước mỏng nhẹ..."
@@ -1073,7 +1073,7 @@ const magazinePosts = [
         title: "Quy trình chăm sóc da chuyên sâu cho da dầu mụn",
         category: "skincare-tips",
         categoryName: "Chăm sóc da chuyên sâu",
-        date: "05/04/2026",
+        date: "01/04/2026",
         description: "Da dầu mụn cần một chế độ chăm sóc đặc biệt để kiểm soát dầu thừa và ngăn ngừa vi khuẩn gây mụn phát triển.",
         thumbnail: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80",
         content: "Nội dung chi tiết về chăm sóc da dầu mụn... <br><br> Sử dụng sữa rửa mặt chứa Salicylic Acid... <br> Toner không cồn... <br> Serum trị mụn..."
@@ -1083,7 +1083,7 @@ const magazinePosts = [
         title: "Review chi tiết bộ sản phẩm dưỡng trắng da Laneige",
         category: "review",
         categoryName: "Review mỹ phẩm",
-        date: "04/04/2026",
+        date: "01/04/2026",
         description: "Cùng xem thử bộ sản phẩm dưỡng trắng đình đám của Laneige có thực sự hiệu quả như lời đồn hay không nhé.",
         thumbnail: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
         content: "Đánh giá chi tiết về Laneige Radian-C... <br><br> Ưu điểm: Thấm nhanh, mùi thơm nhẹ... <br> Nhược điểm: Giá hơi cao..."
@@ -1093,7 +1093,7 @@ const magazinePosts = [
         title: "Top 5 kem chống nắng được yêu thích nhất mùa hè 2026",
         category: "top-products",
         categoryName: "Top mỹ phẩm",
-        date: "03/04/2026",
+        date: "01/04/2026",
         description: "Mùa hè nắng gắt, việc chọn một loại kem chống nắng phù hợp là vô cùng quan trọng để bảo vệ làn da của bạn.",
         thumbnail: "https://images.unsplash.com/photo-1612817288484-6f916006741a?auto=format&fit=crop&w=800&q=80",
         content: "Danh sách 5 kem chống nắng tốt nhất... <br><br> 1. La Roche-Posay Anthelios... <br> 2. Anessa Perfect UV..."
@@ -2072,7 +2072,7 @@ function initEvents() {
                         </div>
                         ${order.items.map(item => `<div style="font-size: 13px;">${item.name} x${item.quantity}</div>`).join('')}
                 <div style="text-align: right; margin-top: 10px; font-weight: 800; color: #007bff;">
-                            ${order.totalPrice.toLocaleString()}đ
+                            Tổng: ${(order.totalPrice || 0).toLocaleString()}đ
                         </div>
                     </div>
                 `;
@@ -2176,6 +2176,8 @@ function initEvents() {
             renderCheckoutSummary();
             checkoutOverlay.style.display = 'block';
             checkoutOverlay.classList.add('active');
+            const checkoutSuccess = document.getElementById('checkoutSuccess');
+            if (checkoutSuccess) checkoutSuccess.style.display = 'none';
             if (checkoutForm) checkoutForm.style.display = 'block';
             const checkoutSuccess = document.getElementById('checkoutSuccess');
             const checkoutQR = document.getElementById('checkoutQR');
@@ -2235,6 +2237,11 @@ function initEvents() {
                             cart = [];
                             localStorage.setItem('qh_cart', JSON.stringify(cart));
                             updateCartUI();
+                        }
+                        
+                        // Làm mới danh sách đơn hàng trong Profile ngay lập tức
+                        if (isLoggedIn) {
+                            renderProfileOrders();
                         }
 
                     const checkoutSuccess = document.getElementById('checkoutSuccess');

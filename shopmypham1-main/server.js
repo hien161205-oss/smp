@@ -718,7 +718,7 @@ let mockMagazine = [
         thumbnail: "https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80",
         description: "Làm thế nào để có một lớp nền mỏng nhẹ, tự nhiên nhưng vẫn che được khuyết điểm?",
         content: "Nội dung chi tiết về bí quyết trang điểm tự nhiên...",
-        createdAt: "2026-04-10T10:00:00.000Z"
+        createdAt: "2026-04-01T00:00:00.000Z"
     },
     {
         _id: "MAG-2",
@@ -727,7 +727,7 @@ let mockMagazine = [
         thumbnail: "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&w=800&q=80",
         description: "Da dầu mụn cần một chế độ chăm sóc đặc biệt để kiểm soát dầu thừa.",
         content: "Nội dung chi tiết về chăm sóc da dầu mụn...",
-        createdAt: "2026-04-12T14:30:00.000Z"
+        createdAt: "2026-04-01T00:00:00.000Z"
     },
     {
         _id: "MAG-3",
@@ -736,7 +736,7 @@ let mockMagazine = [
         thumbnail: "https://product.hstatic.net/1000006063/product/bth_b1850e1e326b4a60ab803afca16b55af_1024x1024.jpg",
         description: "Đánh giá chân thực về khả năng bảo vệ da và cảm giác trên da.",
         content: "Nội dung đánh giá sản phẩm...",
-        createdAt: "2026-04-18T08:15:00.000Z"
+        createdAt: "2026-04-01T00:00:00.000Z"
     }
 ];
 let mockUsers = [
@@ -977,6 +977,27 @@ app.get('/api/users/admin-check', async (req, res) => {
     return res.status(401).json({ message: "Không có quyền Admin" });
 });
 
+// Lấy đơn hàng của cá nhân người dùng
+app.get('/api/orders/myorders', async (req, res) => {
+    const user = await resolveAuthUser(req);
+    if (!user) return res.status(401).json({ message: "Vui lòng đăng nhập để xem đơn hàng" });
+
+    try {
+        if (!db) {
+            // Lọc trong mảng mockOrders những đơn có userId trùng với người đang đăng nhập
+            const userOrders = mockOrders.filter(o => o.userId === user.uid);
+            return res.json(userOrders);
+        }
+        const snapshot = await db.collection('orders')
+            .where('userId', '==', user.uid)
+            .orderBy('createdAt', 'desc')
+            .get();
+        return res.json(snapshot.docs.map(mapDoc));
+    } catch (error) {
+        return res.status(500).json({ message: 'Lỗi lấy đơn hàng', error: error.message });
+    }
+});
+
 // Lấy danh sách đơn hàng (Cho Admin)
 app.get(['/api/orders', '/orders'], requireAdmin, async (req, res) => {
     try {
@@ -991,10 +1012,12 @@ app.get(['/api/orders', '/orders'], requireAdmin, async (req, res) => {
 // Route đặt hàng
 app.post(['/api/orders', '/orders'], async (req, res) => {
     try {
+        const user = await resolveAuthUser(req);
         const { customerInfo, items = [], paymentMethod, totalPrice: clientTotal } = req.body;
 
         const newOrder = {
             _id: "ORDER-" + Date.now() + Math.floor(Math.random() * 1000),
+            userId: user ? user.uid : null, // Gán ID người dùng nếu đã đăng nhập
             customerInfo,
             items,
             paymentMethod,
