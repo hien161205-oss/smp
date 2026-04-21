@@ -925,9 +925,19 @@ app.post('/api/users', async (req, res) => {
         }
     }
 
-    const payload = Buffer.from(JSON.stringify({ id: "mock-id", name, email, isAdmin: false })).toString('base64');
+    // Mock path: Tạo và lưu người dùng mới vào danh sách
+    const newUser = {
+        _id: "u" + Date.now(),
+        name: name || (email ? email.split('@')[0] : 'Người dùng'),
+        email: email || 'user@example.com',
+        role: "Khách hàng",
+        createdAt: new Date().toISOString()
+    };
+    mockUsers.push(newUser);
+
+    const payload = Buffer.from(JSON.stringify({ id: newUser._id, name: newUser.name, email: newUser.email, isAdmin: false })).toString('base64');
     const token = `mockHeader.${payload}.mockSignature`;
-    return res.status(201).json({ token, name, email, isAdmin: false });
+    return res.status(201).json({ token, name: newUser.name, email: newUser.email, isAdmin: false });
 });
 
 // Quản lý Người dùng (Chỉ xem)
